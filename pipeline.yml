@@ -1,0 +1,45 @@
+resources:
+  - name: repo
+    type: git
+    source:
+      uri: https://github.com/legnoh/accelerate-pipeline.git
+  - name: minio
+    type: s3
+    source:
+      endpoint: http://127.0.0.1:9000
+      bucket: accelerate-pipeline
+      access_key_id: minio
+      secret_access_key: miniokey
+      regexp: (.*).json
+
+jobs:
+  - name: gotcha
+    plan:
+      - get: repo
+      - task: unit-test-and-audit
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: node
+              tag: 10
+          inputs:
+            - name: repo
+          outputs:
+            - name: out
+          run:
+            dir: repo
+            path: /bin/sh
+            args:
+              - -c
+              - |
+                npm install
+                npm post-install
+                npm test
+                npm audit
+                cd ..
+                mv repo/coverage/coverage-final.json  out/`basename \`pwd\``.json
+      - put: minio
+        params:
+          file: out/*.json
