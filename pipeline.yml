@@ -35,8 +35,8 @@ jobs:
               - -c
               - |
                 npm install
-                npm post-install
                 npm test
+                npm run-script make-coverage
                 npm audit
                 cd ..
                 mv repo/coverage/coverage-final.json  out/`basename \`pwd\``.json
